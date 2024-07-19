@@ -241,7 +241,21 @@ class Endpoint:
             param = param_or_error  # noqa: PLW2901
 
             if param.param_schema is None:
-                continue
+                # content provides schema too
+                if param.content is not None:
+                    # use schema from "application/json" content type
+                    media_type_item = param.content.get("application/json", None)
+                    if media_type_item is not None:
+                        json_schema = media_type_item.media_type_schema
+
+                    if json_schema is not None:
+                        param_schema = json_schema
+                    else:
+                        continue
+                else:
+                    continue
+            else:
+                param_schema = param.param_schema
 
             unique_param = (param.name, param.param_in)
             if unique_param in unique_parameters:
@@ -269,7 +283,7 @@ class Endpoint:
             prop, new_schemas = property_from_data(
                 name=param.name,
                 required=param.required,
-                data=param.param_schema,
+                data=param_schema,
                 schemas=schemas,
                 parent_name=endpoint.name,
                 config=config,
